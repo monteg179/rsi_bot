@@ -26,3 +26,10 @@ pip install -r requirements.txt
 python rsi_bot/main.py
 ```
 
+## ИСПОЛЬЗОВАНИЕ
+Бот поддерживает команды:
+- /rsi <coin> <timeframe> <rsi length>
+- /volatility
+- /poc 
+- /stop
+
