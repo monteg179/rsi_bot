@@ -23,7 +23,7 @@ pip install -r requirements.txt
 ```
 4. запутить бота
 ```sh
-python rsi_bot/main.py
+poetry run bot
 ```
 
 ## ИСПОЛЬЗОВАНИЕ
@@ -32,4 +32,3 @@ python rsi_bot/main.py
 - /volatility
 - /poc 
 - /stop
-
