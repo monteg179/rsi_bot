@@ -10,8 +10,11 @@ from pandas import (
 )
 import pandas_ta
 
-CLIENT_MAX_PER_SECOND = 3
-CLIENT_MAX_PER_MINUTE = 100
+from rsi_bot import settings
+
+
+MAX_PER_SECOND = settings.CLIENT_MAX_PER_SECOND
+MAX_PER_MINUTE = settings.CLIENT_MAX_PER_MINUTE
 
 
 class RateLimitTransport(httpx.AsyncHTTPTransport):
@@ -109,12 +112,6 @@ class BybitClient:
         )
         return float(result.iloc[-1])
 
-    @classmethod
-    def get_instance(cls) -> Self:
-        if cls.__instance is None:
-            cls.__instance = cls()
-        return cls.__instance
-
     def __new__(cls) -> Self:
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
@@ -124,8 +121,8 @@ class BybitClient:
         self.host = type(self).HOST
         self.client = httpx.AsyncClient(
             transport=RateLimitTransport(
-                max_per_second=CLIENT_MAX_PER_MINUTE,
-                max_per_minute=CLIENT_MAX_PER_MINUTE
+                max_per_second=MAX_PER_SECOND,
+                max_per_minute=MAX_PER_MINUTE
             )
         )
 
@@ -174,48 +171,3 @@ class BybitClient:
             for candle in reversed(json['result']['list'])
         ]
         return DataFrame(candles)
-
-
-class Bybit:
-
-    @staticmethod
-    async def get_kline(symbol: str, interval: str, limit: int = 200):
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url='https://api-testnet.bybit.com/v5/market/kline',
-                params={
-                    'category': 'linear',
-                    'symbol': symbol,
-                    'interval': interval,
-                    'limit': limit,
-                }
-            )
-            if response.status_code == httpx.codes.OK:
-                return response.json()
-
-    @staticmethod
-    def get_kline_rsi(json: dict, length: int) -> float:
-        candles = json['result']['list']
-        data = DataFrame(
-            data={'close': [float(candle[4]) for candle in candles[::-1]]}
-        )
-        return pandas_ta.rsi(data.close, length).iloc[-1]
-
-    @staticmethod
-    async def get_historical_volatility(
-        category: str,
-        baseCoin: str,
-        period: int
-    ):
-        async with httpx.AsyncClient() as client:
-            response = await client.get(
-                url=('https://api-testnet.bybit.com/v5/market/'
-                     'historical-volatility'),
-                params={
-                    'category': category,
-                    'baseCoin': baseCoin,
-                    'period': period
-                }
-            )
-        if response.status_code == httpx.codes.OK:
-            return response.json()
