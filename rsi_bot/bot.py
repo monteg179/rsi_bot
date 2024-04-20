@@ -14,7 +14,7 @@ from rsi_bot.bybit import (
 from rsi_bot import settings
 
 
-TELEGRAM_TOKEN = settings.Secrets().telegram_token
+TELEGRAM_TOKEN = settings.DotEnv().telegram_token
 RSI_JOB_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
 ATR_JOB_INTERVAL = settings.BOT_ATR_JOB_INTERVAL
 
@@ -31,28 +31,30 @@ def remove_all_jobs(queue: JobQueue) -> None:
 
 
 async def rsi_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    coin = context.job.data['coin']
     data = await BybitClient().get_candles(
-        symbol=context.job.data['coin'],
+        symbol=coin,
         interval=context.job.data['timeframe']
     )
     value = BybitClient.rsi(data)
     if value < context.job.data['min'] or value > context.job.data['max']:
         await context.bot.send_message(
             chat_id=context.job.chat_id,
-            text=f'rsi: {value:.2f}'
+            text=f'RSI[{coin}]: {value:.2f}'
         )
 
 
 async def atr_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    coin = context.job.data['coin']
     data = await BybitClient().get_candles(
-        symbol=context.job.data['coin'],
+        symbol=coin,
         interval=context.job.data['timeframe']
     )
     value = BybitClient.atr(data)
     if value < context.job.data['min'] or value > context.job.data['max']:
         await context.bot.send_message(
             chat_id=context.job.chat_id,
-            text=f'atr: {value:.2f}'
+            text=f'ATR[{coin}]: {value:.2f}'
         )
 
 

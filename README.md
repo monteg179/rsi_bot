@@ -25,10 +25,24 @@ pip install -r requirements.txt
 ```sh
 poetry run bot
 ```
+или так 
+```sh
+python rsi_bot/main.py
+```
 
 ## ИСПОЛЬЗОВАНИЕ
 Бот поддерживает команды:
-- /rsi <coin> <timeframe> <rsi length>
-- /volatility
+- /rsi <coin> <timeframe> <min> <max>
+- /atr <coin> <timeframe> <min> <max>
 - /poc 
+- /trend
 - /stop
+
+
+## ТЕХНОЛОГИИ
+- Python 3.11
+- Python-Telegram-Bot
+- Pandas-TA
+
+## АВТОРЫ
+* Сергей Кузнецов - monteg179@yandex.ru

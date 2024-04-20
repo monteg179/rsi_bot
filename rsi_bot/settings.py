@@ -18,8 +18,9 @@ CLIENT_MAX_PER_SECOND = 3
 CLIENT_MAX_PER_MINUTE = 100
 
 
-class Secrets:
+class DotEnv:
 
+    DEBUG = 'DEBUG'
     TELEGRAM_TOKEN = 'TELEGRAM_TOKEN'
     BYBIT_API_KEY = 'BYBIT_API_KEY'
     BYBIT_API_SECRET = 'BYBIT_API_SECRET'
@@ -33,6 +34,7 @@ class Secrets:
 
     def __init__(self) -> None:
         load_dotenv()
+        self.__debug = os.getenv('DEBUG', 'false').lower() == 'true'
         self.__telegram_token = os.getenv(
             key=type(self).TELEGRAM_TOKEN
         )
@@ -42,6 +44,10 @@ class Secrets:
         self.__bybit_api_secret = os.getenv(
             key=type(self).BYBIT_API_KEY
         )
+
+    @property
+    def debug(self) -> bool:
+        return self.__debug
 
     @property
     def telegram_token(self) -> str:
