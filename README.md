@@ -32,11 +32,14 @@ python rsi_bot/main.py
 
 ## ИСПОЛЬЗОВАНИЕ
 Бот поддерживает команды:
-- /rsi <coin> <timeframe> <min> <max>
-- /atr <coin> <timeframe> <min> <max>
-- /poc 
-- /trend
-- /stop
+- `/add rsi <coin> <timeframe> <setpoint>` - добавить задание RSI
+- `/add atr <coin> <timeframe> <setpoint>` - добавить задание ATR
+- `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание RSI 
+- `/remove atr <coin> <timeframe> <setpoint>` - удалить задание ATR
+- `/remove all` - удалить все задания
+- `/list rsi` - просмотр заданий RSI
+- `/list atr` - просмотр заданий ATR
+- `/list all` - просмотр всех заданий
 
 
 ## ТЕХНОЛОГИИ
