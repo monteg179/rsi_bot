@@ -15,9 +15,10 @@ logging.basicConfig(
 logging.getLogger('httpx').setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
+application = build_bot_application()
+
 
 def main():
-    application = build_bot_application()
     run_bot_application(application)
 
 

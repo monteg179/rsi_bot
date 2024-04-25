@@ -18,6 +18,7 @@ from rsi_bot import settings
 TELEGRAM_TOKEN = settings.DotEnv().telegram_token
 RSI_JOB_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
 ATR_JOB_INTERVAL = settings.BOT_ATR_JOB_INTERVAL
+POC_JOB_INTERVAL = settings.BOT_POC_JOB_INTERVAL
 TIMEFRAMES = settings.BOT_TIMEFRAMES
 
 RSI_JOB = 'rsi'
@@ -46,7 +47,11 @@ def atr_job_title(job: Job) -> str | None:
 
 
 def poc_job_title(job: Job) -> str | None:
-    pass
+    if not job.data['type'] == POC_JOB:
+        return
+    coin = job.data['coin']
+    timeframe = job.data['timeframe']
+    return f'POC[{coin}, {timeframe}]'
 
 
 def trend_job_title(job: Job) -> str | None:
@@ -66,7 +71,6 @@ def job_title(job: Job) -> str | None:
 
 
 async def rsi_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-    startup = context.job.data['startup']
     coin = context.job.data['coin']
     timeframe = context.job.data['timeframe']
     setpoint = context.job.data['setpoint']
@@ -75,36 +79,37 @@ async def rsi_job(context: ContextTypes.DEFAULT_TYPE) -> None:
         interval=timeframe
     )
     value = BybitClient.rsi(data)
-    if startup or value < setpoint * 0.15 or value > setpoint * 0.85:
+    if value < setpoint * 0.15 or value > setpoint * 0.85:
         await context.bot.send_message(
             chat_id=context.job.chat_id,
             text=f'{rsi_job_title(context.job)}:\n{value:.2f}'
         )
-    context.job.data['startup'] = False
 
 
 async def atr_job(context: ContextTypes.DEFAULT_TYPE) -> None:
-    startup = context.job.data['startup']
     coin = context.job.data['coin']
     timeframe = context.job.data['timeframe']
     setpoint = context.job.data['setpoint']
-    data = await BybitClient().get_candles(
-        symbol=coin,
-        interval=timeframe
-    )
+    data = await BybitClient().get_candles(coin, timeframe)
     value = BybitClient.atr(data)
-    if startup or value < setpoint * 0.15 or value > setpoint * 0.85:
+    if value < setpoint * 0.15 or value > setpoint * 0.85:
         await context.bot.send_message(
             chat_id=context.job.chat_id,
             text=f'{atr_job_title(context.job)}:\n{value:.2f}'
         )
-    context.job.data['startup'] = False
 
 
 async def poc_job(context: ContextTypes.DEFAULT_TYPE) -> None:
+    coin = context.job.data['coin']
+    timeframe = context.job.data['timeframe']
+    data = await BybitClient().get_candles(coin, timeframe)
+    value = BybitClient.poc(data)
+    val = value.get('val')
+    poc = value.get('poc')
+    vah = value.get('vah')
     await context.bot.send_message(
         chat_id=context.job.chat_id,
-        text=f'poc {context.job.data}'
+        text=f'{poc_job_title(context.job)}:\n{vah:.2f}\n{poc:.2f}\n{val:.2f}'
     )
 
 
@@ -133,8 +138,8 @@ def atr_job_name(
     return f'{user_id}-{ATR_JOB}-{coin}-{timeframe}-{setpoint}'
 
 
-def poc_job_name(user_id: int) -> str:
-    return f'{user_id}-{POC_JOB}-'
+def poc_job_name(user_id: int, coin: str, timeframe: int) -> str:
+    return f'{user_id}-{POC_JOB}-{coin}-{timeframe}'
 
 
 def trend_job_name(user_id: int) -> str:
@@ -159,22 +164,33 @@ async def add_rsi_job(
         )
     else:
         job_name = rsi_job_name(user_id, coin, timeframe, setpoint)
-        remove_job(context.job_queue, job_name)
-        return context.job_queue.run_repeating(
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join(
+                [f'Remove {job_title(job)} job' for job in jobs]
+            ) + '\n'
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = ''
+        result = context.job_queue.run_repeating(
             callback=rsi_job,
             interval=RSI_JOB_INTERVAL,
-            first=1.0,
             name=job_name,
             chat_id=chat_id,
             user_id=user_id,
             data={
                 'type': RSI_JOB,
-                'startup': True,
                 'coin': coin,
                 'timeframe': timeframe,
                 'setpoint': setpoint,
             }
         )
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text + f'Add {job_title(result)} job'
+        )
+        return result
 
 
 async def add_atr_job(
@@ -195,22 +211,33 @@ async def add_atr_job(
         )
     else:
         job_name = atr_job_name(user_id, coin, timeframe, setpoint)
-        remove_job(context.job_queue, job_name)
-        return context.job_queue.run_repeating(
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join(
+                [f'Remove {job_title(job)} job' for job in jobs]
+            ) + '\n'
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = ''
+        result = context.job_queue.run_repeating(
             callback=atr_job,
             interval=ATR_JOB_INTERVAL,
-            first=1.0,
             name=job_name,
             chat_id=chat_id,
             user_id=user_id,
             data={
                 'type': ATR_JOB,
-                'startup': True,
                 'coin': coin,
                 'timeframe': timeframe,
                 'setpoint': setpoint,
             }
         )
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text + f'Add {job_title(result)} job'
+        )
+        return result
 
 
 async def add_poc_job(
@@ -218,7 +245,42 @@ async def add_poc_job(
     chat_id: int,
     context: ContextTypes.DEFAULT_TYPE
 ) -> Job:
-    pass
+    try:
+        coin = context.args[0]
+        timeframe = int(context.args[1])
+    except Exception:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text='Usage: /add poc <coin> <timeframe>'
+        )
+    else:
+        job_name = poc_job_name(user_id, coin, timeframe)
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join(
+                [f'Remove {job_title(job)} job' for job in jobs]
+            ) + '\n'
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = ''
+        result = context.job_queue.run_repeating(
+            callback=poc_job,
+            interval=POC_JOB_INTERVAL,
+            name=job_name,
+            chat_id=chat_id,
+            user_id=user_id,
+            data={
+                'type': POC_JOB,
+                'coin': coin,
+                'timeframe': timeframe,
+            }
+        )
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text + f'Add {job_title(result)} job'
+        )
+        return result
 
 
 async def add_trend_job(
@@ -271,7 +333,17 @@ async def remove_rsi_job(
         )
     else:
         job_name = rsi_job_name(user_id, coin, timeframe, setpoint)
-        remove_job(context.job_queue, job_name)
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join([f'Remove {job_title(job)} job' for job in jobs])
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = 'empty'
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text
+        )
 
 
 async def remove_atr_job(
@@ -290,7 +362,17 @@ async def remove_atr_job(
         )
     else:
         job_name = atr_job_name(user_id, coin, timeframe, setpoint)
-        remove_job(context.job_queue, job_name)
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join([f'Remove {job_title(job)} job' for job in jobs])
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = 'empty'
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text
+        )
 
 
 async def remove_poc_job(
@@ -298,7 +380,27 @@ async def remove_poc_job(
     chat_id: int,
     context: ContextTypes.DEFAULT_TYPE
 ) -> None:
-    pass
+    try:
+        coin = context.args[0]
+        timeframe = int(context.args[1])
+    except Exception:
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text='Usage: /remove atr <coin> <timeframe>'
+        )
+    else:
+        job_name = poc_job_name(user_id, coin, timeframe)
+        jobs = context.job_queue.get_jobs_by_name(job_name)
+        if jobs:
+            text = '\n'.join([f'Remove {job_title(job)} job' for job in jobs])
+            for job in jobs:
+                job.schedule_removal()
+        else:
+            text = 'empty'
+        await context.bot.send_message(
+            chat_id=chat_id,
+            text=text
+        )
 
 
 async def remove_trend_job(

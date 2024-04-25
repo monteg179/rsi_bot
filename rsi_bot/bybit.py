@@ -112,6 +112,27 @@ class BybitClient:
         )
         return float(result.iloc[-1])
 
+    @classmethod
+    def poc(cls, data: DataFrame, k: float = 0.7) -> dict[str, float]:
+        _data = data.copy()
+        _data.sort_values(by=cls.VOLUME_COLUMN, inplace=True, ascending=False)
+        value = (_data[cls.HIGH_PRICE_COLUMN].iloc[0] +
+                 _data[cls.LOW_PRICE_COLUMN].iloc[0]) / 2
+        threshold = _data[cls.VOLUME_COLUMN].sum() * k
+        volume = 0
+        index = 0
+        for idx, row in _data.iterrows():
+            volume += row[cls.VOLUME_COLUMN]
+            if volume >= threshold:
+                index = idx
+                break
+        _data = _data.loc[:index]
+        return {
+            'val': float(_data[cls.LOW_PRICE_COLUMN].min()),
+            'vah': float(_data[cls.HIGH_PRICE_COLUMN].max()),
+            'poc': float(value),
+        }
+
     def __new__(cls) -> Self:
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
