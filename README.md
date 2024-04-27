@@ -34,15 +34,14 @@ python rsi_bot/main.py
 Бот поддерживает команды:
 - `/add rsi <coin> <timeframe> <setpoint>` - добавить задание RSI
 - `/add atr <coin> <timeframe> <setpoint>` - добавить задание ATR
-- `/add atr <coin> <timeframe>` - добавить задание POC
+- `/add poc <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание POC
 - `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание RSI 
 - `/remove atr <coin> <timeframe> <setpoint>` - удалить задание ATR
-- `/remove atr <coin> <timeframe>` - удалить задание ATR
-- `/remove all` - удалить все задания
+- `/remove poc <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание POC
 - `/list rsi` - просмотр заданий RSI
 - `/list atr` - просмотр заданий ATR
 - `/list poc` - просмотр заданий POC
-- `/list all` - просмотр всех заданий
+- `/list` - просмотр всех заданий
 
 
 ## ТЕХНОЛОГИИ
