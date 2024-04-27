@@ -1,12 +1,13 @@
 import logging
 
-from rsi_bot.bot import (
+from rsi_bot import (
     build_bot_application,
     run_bot_application,
 )
-from rsi_bot.settings import (
-    LOG_LEVEL
-)
+from rsi_bot import settings
+
+LOG_LEVEL = settings.LOG_LEVEL
+
 
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',

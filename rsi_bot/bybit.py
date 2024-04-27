@@ -10,9 +10,13 @@ from pandas import (
 )
 import pandas_ta
 
+from rsi_bot.exceptions import (
+    BybitClientConnectionError,
+    BybitClientResponseError,
+)
 from rsi_bot import settings
 
-DEBUG = settings.DotEnv().debug
+DEBUG = settings.Enviroment().debug
 MAX_PER_SECOND = settings.CLIENT_MAX_PER_SECOND
 MAX_PER_MINUTE = settings.CLIENT_MAX_PER_MINUTE
 
@@ -91,8 +95,6 @@ class BybitClient:
     CLOSE_PRICE_COLUMN = 'close_price'
     VOLUME_COLUMN = 'volume'
     TURNOVER_COLUMN = 'turnover'
-    CANDLE_COLUMNS = [START_TIME_COLUMN, OPEN_PRICE_COLUMN, HIGH_PRICE_COLUMN,
-                      LOW_PRICE_COLUMN, VOLUME_COLUMN, TURNOVER_COLUMN]
 
     @classmethod
     def rsi(cls, data: DataFrame) -> float | None:
@@ -113,23 +115,48 @@ class BybitClient:
         return float(result.iloc[-1])
 
     @classmethod
-    def poc(cls, data: DataFrame, k: float = 0.7) -> dict[str, float]:
-        _data = data.copy()
-        _data.sort_values(by=cls.VOLUME_COLUMN, inplace=True, ascending=False)
-        value = (_data[cls.HIGH_PRICE_COLUMN].iloc[0] +
-                 _data[cls.LOW_PRICE_COLUMN].iloc[0]) / 2
-        threshold = _data[cls.VOLUME_COLUMN].sum() * k
+    def flats(
+        cls,
+        data: DataFrame,
+        max_difference: float,
+        min_length: int,
+        va: float
+    ) -> list[dict[str, float]]:
+        result = []
+        first = 0
+        value = data.iloc[first][cls.CLOSE_PRICE_COLUMN]
+        high = value * (1.0 + max_difference / 100.0)
+        low = value * (1.0 - max_difference / 100.0)
+        for index in range(1, len(data)):
+            current = data.iloc[index][cls.CLOSE_PRICE_COLUMN]
+            if current < low or current > high:
+                if index - first >= min_length:
+                    result.append(cls.poc(data.iloc[first:index], va))
+                first = index
+                high = current * (1.0 + max_difference / 100.0)
+                low = current * (1.0 - max_difference / 100.0)
+        else:
+            if index - first >= min_length:
+                result.append(cls.poc(data.iloc[first:index], va))
+        return result
+
+    @classmethod
+    def poc(cls, data: DataFrame, va: float) -> dict[str, float]:
+        data.sort_values(by=cls.VOLUME_COLUMN, inplace=True, ascending=False)
+        value = (data[cls.HIGH_PRICE_COLUMN].iloc[0] +
+                 data[cls.LOW_PRICE_COLUMN].iloc[0]) / 2
+        threshold = data[cls.VOLUME_COLUMN].sum() * va / 100.0
         volume = 0
         index = 0
-        for idx, row in _data.iterrows():
+        for idx, row in data.iterrows():
             volume += row[cls.VOLUME_COLUMN]
             if volume >= threshold:
                 index = idx
                 break
-        _data = _data.loc[:index]
+        data = data.loc[:index]
         return {
-            'val': float(_data[cls.LOW_PRICE_COLUMN].min()),
-            'vah': float(_data[cls.HIGH_PRICE_COLUMN].max()),
+            'val': float(data[cls.LOW_PRICE_COLUMN].min()),
+            'vah': float(data[cls.HIGH_PRICE_COLUMN].max()),
             'poc': float(value),
         }
 
@@ -155,11 +182,17 @@ class BybitClient:
         endpoint: str,
         params: dict[str, Any]
     ) -> dict[str, Any]:
-        response = await self.client.get(
-            url=f'https://{self.host}/{endpoint}',
-            params=params
-        )
-        if response.status_code == httpx.codes.OK:
+        try:
+            response = await self.client.get(
+                url=f'https://{self.host}/{endpoint}',
+                params=params
+            )
+        except Exception as error:
+            raise BybitClientConnectionError() from error
+        else:
+            status_code = response.status_code
+            if not status_code == httpx.codes.OK:
+                raise BybitClientResponseError(status_code)
             return response.json()
 
     async def get_candles(
@@ -177,18 +210,23 @@ class BybitClient:
                 'limit': limit,
             }
         )
-        if not json:
-            return DataFrame(columns=self.CANDLE_COLUMNS)
-        candles = [
-            {
-                self.START_TIME_COLUMN: float(candle[0]) / 1000.0,
-                self.OPEN_PRICE_COLUMN: float(candle[1]),
-                self.HIGH_PRICE_COLUMN: float(candle[2]),
-                self.LOW_PRICE_COLUMN: float(candle[3]),
-                self.CLOSE_PRICE_COLUMN: float(candle[4]),
-                self.VOLUME_COLUMN: float(candle[5]),
-                self.TURNOVER_COLUMN: float(candle[6]),
-            }
-            for candle in reversed(json['result']['list'])
-        ]
-        return DataFrame(candles)
+        try:
+            json_candles = json['result']['list']
+            if not len(json_candles) == limit:
+                raise BybitClientResponseError()
+            candles = [
+                {
+                    self.START_TIME_COLUMN: float(candle[0]) / 1000.0,
+                    self.OPEN_PRICE_COLUMN: float(candle[1]),
+                    self.HIGH_PRICE_COLUMN: float(candle[2]),
+                    self.LOW_PRICE_COLUMN: float(candle[3]),
+                    self.CLOSE_PRICE_COLUMN: float(candle[4]),
+                    self.VOLUME_COLUMN: float(candle[5]),
+                    self.TURNOVER_COLUMN: float(candle[6]),
+                }
+                for candle in reversed(json_candles)
+            ]
+        except Exception as error:
+            raise BybitClientResponseError() from error
+        else:
+            return DataFrame(candles)

@@ -1,7 +1,3 @@
 GET /v5/market/kline?category=linear&symbol=BTCUSD&interval=30&limit=10 HTTP/1.1
 Host: api-testnet.bybit.com
 ###
-
-GET /v5/market/historical-volatility?category=option&baseCoin=BTC&period=7 HTTP/1.1
-Host: api-testnet.bybit.com
-###
