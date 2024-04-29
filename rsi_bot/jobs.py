@@ -9,6 +9,7 @@ from telegram.ext import (
 
 from rsi_bot.bybit import (
     BybitClient,
+    KLineInterval,
 )
 from rsi_bot.exceptions import (
     BotJobsShellError,
@@ -16,11 +17,8 @@ from rsi_bot.exceptions import (
 from rsi_bot import settings
 
 RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
-RSI_TIMEFRAMES = settings.BOT_RSI_JOB_TIMEFRAMES
 ATR_INTERVAL = settings.BOT_ATR_JOB_INTERVAL
-ATR_TIMEFRAMES = settings.BOT_ATR_JOB_TIMEFRAMES
 POC_INTERVAL = settings.BOT_POC_JOB_INTERVAL
-POC_TIMEFRAMES = settings.BOT_POC_JOB_TIMEFRAMES
 TREND_INTERVAL = settings.BOT_TREND_JOB_INTERVAL
 
 
@@ -70,10 +68,16 @@ class RsiJob(BotJobHelper):
 
     prefix = 'rsi'
     interval = RSI_INTERVAL
+    timeframes: dict[str, tuple[int, KLineInterval]] = {
+        '30': (30, KLineInterval.minute),
+        '240': (240, KLineInterval.minute),
+    }
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(str(timeframe) for timeframe in RSI_TIMEFRAMES)
+        timeframes = ','.join(
+            str(timeframe) for timeframe in cls.timeframes.keys()
+        )
         return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
                 f'coin: string\ntimeframe: {timeframes}\nsetpoint: float')
 
@@ -86,9 +90,9 @@ class RsiJob(BotJobHelper):
     ) -> None:
         super().__init__(user_id)
         self.__coin = coin
-        self.__timeframe = int(timeframe)
-        if self.__timeframe not in RSI_TIMEFRAMES:
-            raise ValueError('timeframe invalid value')
+        if timeframe not in self.timeframes.keys():
+            raise ValueError(f'timeframe invalid value: {timeframe}')
+        self.__timeframe = timeframe
         self.__setpoint = float(setpoint)
 
     def get_name(self) -> str:
@@ -107,9 +111,11 @@ class RsiJob(BotJobHelper):
                 f'{self.__setpoint}]')
 
     async def execute(self) -> str | None:
+        limit, interval = self.timeframes[self.__timeframe]
         data = await BybitClient().get_candles(
             symbol=self.__coin,
-            interval=self.__timeframe
+            interval=interval,
+            limit=limit
         )
         value = BybitClient.rsi(data)
         if value < self.__setpoint * 0.15 or value > self.__setpoint * 0.85:
@@ -120,10 +126,16 @@ class AtrJob(BotJobHelper):
 
     prefix = 'atr'
     interval = ATR_INTERVAL
+    timeframes: dict[str, tuple[int, KLineInterval]] = {
+        '30': (30, KLineInterval.minute),
+        '240': (240, KLineInterval.minute),
+    }
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(str(timeframe) for timeframe in ATR_TIMEFRAMES)
+        timeframes = ','.join(
+            str(timeframe) for timeframe in cls.timeframes.keys()
+        )
         return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
                 f'coint: string\ntimeframe: {timeframes}\nsetpoint: float')
 
@@ -136,9 +148,9 @@ class AtrJob(BotJobHelper):
     ) -> None:
         super().__init__(user_id)
         self.__coin = coin
-        self.__timeframe = int(timeframe)
-        if self.__timeframe not in ATR_TIMEFRAMES:
-            raise ValueError('timeframe invalid value')
+        if timeframe not in self.timeframes.keys():
+            raise ValueError(f'timeframe invalid value: {timeframe}')
+        self.__timeframe = timeframe
         self.__setpoint = float(setpoint)
 
     def get_name(self) -> str:
@@ -157,7 +169,12 @@ class AtrJob(BotJobHelper):
                 f'{self.__setpoint}]')
 
     async def execute(self) -> str | None:
-        data = await BybitClient().get_candles(self.__coin, self.__timeframe)
+        limit, interval = self.timeframes[self.__timeframe]
+        data = await BybitClient().get_candles(
+            symbol=self.__coin,
+            interval=interval,
+            limit=limit,
+        )
         value = BybitClient.atr(data)
         if value < self.__setpoint * 0.15 or value > self.__setpoint * 0.85:
             return f'{self.get_title()}:\n{value:.2f}'
@@ -167,10 +184,18 @@ class PocJob(BotJobHelper):
 
     prefix = 'poc'
     interval = POC_INTERVAL
+    timeframes: dict[str, tuple[int, KLineInterval]] = {
+        '30': (30, KLineInterval.minute),
+        '60': (60, KLineInterval.minute),
+        '240': (240, KLineInterval.minute),
+        '1440': (480, KLineInterval.minute_x3)
+    }
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(str(timeframe) for timeframe in POC_TIMEFRAMES)
+        timeframes = ','.join(
+            str(timeframe) for timeframe in cls.timeframes.keys()
+        )
         return (f'{cls.get_prefix()} <coin> <timeframe> <max_difference> '
                 f'<min_length> <va>\ncoin: string\ntimeframes: {timeframes}\n'
                 f'max_difference: float\nmin_length: integer\nva: float')
@@ -186,9 +211,9 @@ class PocJob(BotJobHelper):
     ) -> None:
         super().__init__(user_id)
         self.__coin = coin
-        self.__timeframe = int(timeframe)
-        if self.__timeframe not in POC_TIMEFRAMES:
-            raise ValueError('timeframe invalid value')
+        if timeframe not in self.timeframes.keys():
+            raise ValueError(f'timeframe invalid value: {timeframe}')
+        self.__timeframe = timeframe
         self.__max_difference = float(max_difference)
         self.__min_length = int(min_length)
         self.__va = float(va)
@@ -196,23 +221,29 @@ class PocJob(BotJobHelper):
     def get_name(self) -> str:
         prefix = self.get_prefix().lower()
         return (f'{self.user_id}-'
-                f'{prefix}'
-                f'-{self.__coin}-'
-                f'{self.__timeframe}'
-                f'-{self.__max_difference}'
-                f'-{self.__min_length}-{self.__va}')
+                f'{prefix}-'
+                f'{self.__coin}-'
+                f'{self.__timeframe}-'
+                f'{self.__max_difference}-'
+                f'{self.__min_length}-'
+                f'{self.__va}')
 
     def get_title(self) -> str:
         prefix = self.get_prefix().upper()
         return (f'{prefix}['
                 f'{self.__coin}, '
                 f'{self.__timeframe}, '
-                f'{self.__max_difference},'
+                f'{self.__max_difference}, '
                 f'{self.__min_length}, '
                 f'{self.__va}]')
 
     async def execute(self) -> str | None:
-        data = await BybitClient().get_candles(self.__coin, self.__timeframe)
+        limit, interval = self.timeframes[self.__timeframe]
+        data = await BybitClient().get_candles(
+            symbol=self.__coin,
+            interval=interval,
+            limit=limit
+        )
         flats = BybitClient.flats(
             data=data,
             max_difference=self.__max_difference,
@@ -231,22 +262,53 @@ class TrendJob(BotJobHelper):
 
     prefix = 'trend'
     interval = TREND_INTERVAL
+    timeframes: dict[str, tuple[int, KLineInterval]] = {
+        '30': (30, KLineInterval.minute),
+        '60': (60, KLineInterval.minute),
+        '240': (240, KLineInterval.minute),
+        '1440': (480, KLineInterval.minute_x3)
+    }
 
     @classmethod
     def get_usage_message(cls) -> str:
-        pass
+        timeframes = ','.join(
+            str(timeframe) for timeframe in cls.timeframes.keys()
+        )
+        return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
+                f'coint: string\ntimeframe: {timeframes}\n')
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, user_id: int, coin: str, timeframe: str) -> None:
+        super().__init__(user_id)
+        self.__coin = coin
+        if timeframe not in self.timeframes.keys():
+            raise ValueError(f'timeframe invalid value: {timeframe}')
+        self.__timeframe = timeframe
 
     def get_name(self) -> str:
-        pass
+        prefix = self.get_prefix().lower()
+        return (f'{self.user_id}-'
+                f'{prefix}-'
+                f'{self.__coin}-'
+                f'{self.__timeframe}')
 
     def get_title(self) -> str:
-        pass
+        prefix = self.get_prefix().upper()
+        return (f'{prefix}['
+                f'{self.__coin}, '
+                f'{self.__timeframe}]')
 
     async def execute(self) -> str | None:
-        return await super().execute()
+        limit, interval = self.timeframes[self.__timeframe]
+        data = await BybitClient().get_candles(
+            symbol=self.__coin,
+            interval=interval,
+            limit=limit
+        )
+        result = BybitClient.trend(data)
+        if result > 0:
+            return f'{self.get_title()}:\nuptrend'
+        if result < 0:
+            return f'{self.get_title()}:\ndowntrend'
 
 
 class BotJobsShell:

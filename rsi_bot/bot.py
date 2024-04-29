@@ -113,11 +113,11 @@ async def errors_handler(
     context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     error = context.error
-    msg = str(type(error))
+    text = [str(type(error))]
     while error.__cause__ is not None:
         error = error.__cause__
-        msg = f'{msg} - {str()}'
-    logger.error(msg)
+        text.append(str(type(error)))
+    logger.error(' - '.join(text))
 
 
 def build_bot_application() -> Application:
@@ -131,7 +131,7 @@ def build_bot_application() -> Application:
     app.add_handler(
         CommandHandler('list', list_command_handler)
     )
-    app.add_error_handler(errors_handler)
+    # app.add_error_handler(errors_handler)
     return app
 
 

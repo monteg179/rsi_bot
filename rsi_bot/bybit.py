@@ -1,4 +1,5 @@
 import asyncio
+import enum
 from typing import (
     Any,
     Self,
@@ -8,10 +9,11 @@ import httpx
 from pandas import (
     DataFrame,
 )
-import pandas_ta
+import pandas_ta as ta
 
 from rsi_bot.exceptions import (
     BybitClientConnectionError,
+    BybitClientError,
     BybitClientResponseError,
 )
 from rsi_bot import settings
@@ -81,12 +83,33 @@ class RateLimitTransport(httpx.AsyncHTTPTransport):
         return await super().__aenter__()
 
 
+class KLineInterval(enum.Enum):
+    minute = '1'
+    hour = '60'
+    day = 'D'
+    week = 'W'
+    month = 'M'
+    minute_x3 = '3'
+    minute_x5 = '5'
+    minute_x15 = '15'
+    minute_x30 = '30'
+    hour_x2 = '120'
+    hour_x4 = '240'
+    hour_x6 = '360'
+    hour_x12 = '720'
+
+
 class BybitClient:
 
     __instance: Self = None
 
-    HOST = 'api-testnet.bybit.com'
+    HOST = 'api.bybit.com'
     TEST_HOST = 'api-testnet.bybit.com'
+
+    KLINE_ENDPOINT = 'v5/market/kline'
+
+    KLINE_MIN_LIMIT = 1
+    KLINE_MAX_LIMIT = 1000
 
     START_TIME_COLUMN = 'start_time'
     OPEN_PRICE_COLUMN = 'open_price'
@@ -98,21 +121,17 @@ class BybitClient:
 
     @classmethod
     def rsi(cls, data: DataFrame) -> float | None:
-        if data.empty:
-            return
-        result = pandas_ta.rsi(data[cls.CLOSE_PRICE_COLUMN])
-        return float(result.iloc[-1])
+        indicator = ta.rsi(data[cls.CLOSE_PRICE_COLUMN])
+        return float(indicator.iloc[-1])
 
     @classmethod
     def atr(cls, data: DataFrame) -> float | None:
-        if data.empty:
-            return
-        result = pandas_ta.atr(
+        indicator = ta.atr(
             high=data[cls.HIGH_PRICE_COLUMN],
             low=data[cls.LOW_PRICE_COLUMN],
             close=data[cls.CLOSE_PRICE_COLUMN]
         )
-        return float(result.iloc[-1])
+        return float(indicator.iloc[-1])
 
     @classmethod
     def flats(
@@ -160,6 +179,30 @@ class BybitClient:
             'poc': float(value),
         }
 
+    @classmethod
+    def trend(cls, data: DataFrame, length: int = 14) -> int:
+        indicator = ta.adx(
+            high=data[cls.HIGH_PRICE_COLUMN][:-4],
+            low=data[cls.LOW_PRICE_COLUMN][:-4],
+            close=data[cls.CLOSE_PRICE_COLUMN][:-4],
+            length=length
+        )
+        value = indicator.iloc[-1]
+        pos = value[f'DMP_{length}']
+        neg = value[f'DMN_{length}']
+        price = data[cls.CLOSE_PRICE_COLUMN]
+        if pos > neg:
+            low = data[cls.LOW_PRICE_COLUMN].iloc[-4]
+            if (price.iloc[-3] < low and price.iloc[-2] < low and
+                    price.iloc[-1] < low):
+                return -1
+        if neg > pos:
+            high = data[cls.HIGH_PRICE_COLUMN].iloc[-4]
+            if (price.iloc[-3] > high and price.iloc[-2] > high and
+                    price.iloc[-1] > high):
+                return 1
+        return 0
+
     def __new__(cls) -> Self:
         if cls.__instance is None:
             cls.__instance = super().__new__(cls)
@@ -198,15 +241,17 @@ class BybitClient:
     async def get_candles(
         self,
         symbol: str,
-        interval: str,
-        limit: int = 200
+        interval: KLineInterval,
+        limit: int
     ) -> DataFrame:
+        if limit < self.KLINE_MIN_LIMIT or limit > self.KLINE_MAX_LIMIT:
+            raise BybitClientError(f'limit invalid value: {limit}')
         json = await self.get(
-            endpoint='v5/market/kline',
+            endpoint=self.KLINE_ENDPOINT,
             params={
                 'category': 'linear',
                 'symbol': symbol,
-                'interval': interval,
+                'interval': interval.value,
                 'limit': limit,
             }
         )

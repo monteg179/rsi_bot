@@ -11,14 +11,14 @@ import os
 
 LOG_LEVEL = logging.INFO
 
+# BOT_RSI_JOB_INTERVAL = 1800.0
+# BOT_ATR_JOB_INTERVAL = 1800.0
+# BOT_POC_JOB_INTERVAL = 1800.0
+# BOT_TREND_JOB_INTERVAL = 1800.0
 BOT_RSI_JOB_INTERVAL = 30.0
-BOT_RSI_JOB_TIMEFRAMES = [30, 240]
 BOT_ATR_JOB_INTERVAL = 30.0
-BOT_ATR_JOB_TIMEFRAMES = [30, 240]
 BOT_POC_JOB_INTERVAL = 30.0
-BOT_POC_JOB_TIMEFRAMES = [30, 240]
-BOT_TREND_JOB_INTERVAL = 1800.0
-BOT_RSI_TIMEFRAMES = [30, 240]
+BOT_TREND_JOB_INTERVAL = 30.0
 
 CLIENT_MAX_PER_SECOND = 3
 CLIENT_MAX_PER_MINUTE = 100
@@ -40,7 +40,7 @@ class Enviroment:
 
     def __init__(self) -> None:
         load_dotenv()
-        self.__debug = os.getenv('DEBUG', 'false').lower() == 'true'
+        self.__debug = os.getenv(type(self).DEBUG, 'false').lower() == 'true'
         self.__telegram_token = os.getenv(
             key=type(self).TELEGRAM_TOKEN
         )
