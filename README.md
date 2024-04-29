@@ -31,16 +31,21 @@ python rsi_bot/main.py
 ```
 
 ## ИСПОЛЬЗОВАНИЕ
-Бот поддерживает команды:
+бот поддерживает команды:
 - `/add rsi <coin> <timeframe> <setpoint>` - добавить задание RSI
 - `/add atr <coin> <timeframe> <setpoint>` - добавить задание ATR
 - `/add poc <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание POC
+- `/add trend <coin> <timeframe>` - добавить задание TREND
+
 - `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание RSI 
 - `/remove atr <coin> <timeframe> <setpoint>` - удалить задание ATR
 - `/remove poc <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание POC
+- `/remove trend <coin> <timeframe>` - удалить задание TREND
+
 - `/list rsi` - просмотр заданий RSI
 - `/list atr` - просмотр заданий ATR
 - `/list poc` - просмотр заданий POC
+- `/list trend` - просмотр заданий TREND
 - `/list` - просмотр всех заданий
 
 
