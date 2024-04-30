@@ -9,7 +9,6 @@ import httpx
 from pandas import (
     DataFrame,
 )
-import pandas_ta as ta
 
 from rsi_bot.exceptions import (
     BybitClientConnectionError,
@@ -17,6 +16,7 @@ from rsi_bot.exceptions import (
     BybitClientResponseError,
 )
 from rsi_bot import settings
+from rsi_bot import ta
 
 DEBUG = settings.Enviroment().debug
 MAX_PER_SECOND = settings.CLIENT_MAX_PER_SECOND
@@ -120,13 +120,13 @@ class BybitClient:
     TURNOVER_COLUMN = 'turnover'
 
     @classmethod
-    def rsi(cls, data: DataFrame) -> float | None:
+    def rsi(cls, data: DataFrame) -> float:
         indicator = ta.rsi(data[cls.CLOSE_PRICE_COLUMN])
         return float(indicator.iloc[-1])
 
     @classmethod
-    def atr(cls, data: DataFrame) -> float | None:
-        indicator = ta.atr(
+    def volatility(cls, data: DataFrame) -> float:
+        indicator = ta.volatility(
             high=data[cls.HIGH_PRICE_COLUMN],
             low=data[cls.LOW_PRICE_COLUMN],
             close=data[cls.CLOSE_PRICE_COLUMN]
@@ -141,67 +141,31 @@ class BybitClient:
         min_length: int,
         va: float
     ) -> list[dict[str, float]]:
+        flats = ta.flats(
+            close=data[cls.CLOSE_PRICE_COLUMN],
+            max_difference=max_difference,
+            min_length=min_length
+        )
         result = []
-        first = 0
-        value = data.iloc[first][cls.CLOSE_PRICE_COLUMN]
-        high = value * (1.0 + max_difference / 100.0)
-        low = value * (1.0 - max_difference / 100.0)
-        for index in range(1, len(data)):
-            current = data.iloc[index][cls.CLOSE_PRICE_COLUMN]
-            if current < low or current > high:
-                if index - first >= min_length:
-                    result.append(cls.poc(data.iloc[first:index], va))
-                first = index
-                high = current * (1.0 + max_difference / 100.0)
-                low = current * (1.0 - max_difference / 100.0)
-        else:
-            if index - first >= min_length:
-                result.append(cls.poc(data.iloc[first:index], va))
+        if flats:
+            for flat in flats:
+                frame = data.iloc[flat[0]:flat[1]]
+                result.append(ta.poc_val_vah(
+                    high=frame[cls.HIGH_PRICE_COLUMN],
+                    low=frame[cls.LOW_PRICE_COLUMN],
+                    volume=frame[cls.VOLUME_COLUMN],
+                    va=va
+                ))
         return result
 
     @classmethod
-    def poc(cls, data: DataFrame, va: float) -> dict[str, float]:
-        data.sort_values(by=cls.VOLUME_COLUMN, inplace=True, ascending=False)
-        value = (data[cls.HIGH_PRICE_COLUMN].iloc[0] +
-                 data[cls.LOW_PRICE_COLUMN].iloc[0]) / 2
-        threshold = data[cls.VOLUME_COLUMN].sum() * va / 100.0
-        volume = 0
-        index = 0
-        for idx, row in data.iterrows():
-            volume += row[cls.VOLUME_COLUMN]
-            if volume >= threshold:
-                index = idx
-                break
-        data = data.loc[:index]
-        return {
-            'val': float(data[cls.LOW_PRICE_COLUMN].min()),
-            'vah': float(data[cls.HIGH_PRICE_COLUMN].max()),
-            'poc': float(value),
-        }
-
-    @classmethod
     def trend(cls, data: DataFrame, length: int = 14) -> int:
-        indicator = ta.adx(
+        return ta.trend(
             high=data[cls.HIGH_PRICE_COLUMN][:-4],
             low=data[cls.LOW_PRICE_COLUMN][:-4],
             close=data[cls.CLOSE_PRICE_COLUMN][:-4],
             length=length
         )
-        value = indicator.iloc[-1]
-        pos = value[f'DMP_{length}']
-        neg = value[f'DMN_{length}']
-        price = data[cls.CLOSE_PRICE_COLUMN]
-        if pos > neg:
-            low = data[cls.LOW_PRICE_COLUMN].iloc[-4]
-            if (price.iloc[-3] < low and price.iloc[-2] < low and
-                    price.iloc[-1] < low):
-                return -1
-        if neg > pos:
-            high = data[cls.HIGH_PRICE_COLUMN].iloc[-4]
-            if (price.iloc[-3] > high and price.iloc[-2] > high and
-                    price.iloc[-1] > high):
-                return 1
-        return 0
 
     def __new__(cls) -> Self:
         if cls.__instance is None:

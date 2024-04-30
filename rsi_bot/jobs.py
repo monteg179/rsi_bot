@@ -17,8 +17,8 @@ from rsi_bot.exceptions import (
 from rsi_bot import settings
 
 RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
-ATR_INTERVAL = settings.BOT_ATR_JOB_INTERVAL
-POC_INTERVAL = settings.BOT_POC_JOB_INTERVAL
+VOLATILITY_INTERVAL = settings.BOT_VOLATILITY_JOB_INTERVAL
+FLATS_INTERVAL = settings.BOT_FLATS_JOB_INTERVAL
 TREND_INTERVAL = settings.BOT_TREND_JOB_INTERVAL
 
 
@@ -75,7 +75,7 @@ class RsiJob(BotJobHelper):
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(
+        timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
@@ -122,10 +122,10 @@ class RsiJob(BotJobHelper):
             return f'{self.get_title()}:\n{value:.2f}'
 
 
-class AtrJob(BotJobHelper):
+class VolatilityJob(BotJobHelper):
 
-    prefix = 'atr'
-    interval = ATR_INTERVAL
+    prefix = 'volatility'
+    interval = VOLATILITY_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '240': (240, KLineInterval.minute),
@@ -133,7 +133,7 @@ class AtrJob(BotJobHelper):
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(
+        timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
@@ -175,15 +175,15 @@ class AtrJob(BotJobHelper):
             interval=interval,
             limit=limit,
         )
-        value = BybitClient.atr(data)
+        value = BybitClient.volatility(data)
         if value < self.__setpoint * 0.15 or value > self.__setpoint * 0.85:
             return f'{self.get_title()}:\n{value:.2f}'
 
 
-class PocJob(BotJobHelper):
+class FlatsJob(BotJobHelper):
 
-    prefix = 'poc'
-    interval = POC_INTERVAL
+    prefix = 'flats'
+    interval = FLATS_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '60': (60, KLineInterval.minute),
@@ -193,7 +193,7 @@ class PocJob(BotJobHelper):
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(
+        timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_prefix()} <coin> <timeframe> <max_difference> '
@@ -252,8 +252,8 @@ class PocJob(BotJobHelper):
         )
         if flats:
             result = [
-                f'val={line["val"]:.2f}, poc={line["poc"]}, vah={line["vah"]}'
-                for line in flats
+                f'val={flat["val"]:.2f}, poc={flat["poc"]}, vah={flat["vah"]}'
+                for flat in flats
             ]
             return f'{self.title}:\n' + '\n'.join(result)
 
@@ -271,7 +271,7 @@ class TrendJob(BotJobHelper):
 
     @classmethod
     def get_usage_message(cls) -> str:
-        timeframes = ','.join(
+        timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
@@ -306,17 +306,17 @@ class TrendJob(BotJobHelper):
         )
         result = BybitClient.trend(data)
         if result > 0:
-            return f'{self.get_title()}:\nuptrend'
+            return f'{self.get_title()}:\ndowntrend to uptrend'
         if result < 0:
-            return f'{self.get_title()}:\ndowntrend'
+            return f'{self.get_title()}:\nuptrend to downtrend'
 
 
 class BotJobsShell:
 
     HELPERS: list[Type[BotJobHelper]] = [
         RsiJob,
-        AtrJob,
-        PocJob,
+        VolatilityJob,
+        FlatsJob,
         TrendJob,
     ]
 

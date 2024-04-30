@@ -117,7 +117,7 @@ async def errors_handler(
     while error.__cause__ is not None:
         error = error.__cause__
         text.append(str(type(error)))
-    logger.error(' - '.join(text))
+    logger.error(f'{" - ".join(text)}: {str(error)}')
 
 
 def build_bot_application() -> Application:
@@ -131,7 +131,7 @@ def build_bot_application() -> Application:
     app.add_handler(
         CommandHandler('list', list_command_handler)
     )
-    # app.add_error_handler(errors_handler)
+    app.add_error_handler(errors_handler)
     return app
 
 
