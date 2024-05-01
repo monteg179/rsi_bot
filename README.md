@@ -43,16 +43,16 @@ list – просмотр заданий планировщика
 - `timeframe` – временной интервал, `30`, `60`, `240`, `1440`
 - `max_difference` – диапазон цен закрытия флэта, в процентах
 - `min_length` – минимальная длина флэта
-- `va` – “размер” `va`, процент от общего объема сделок (`volume`)
+- `va` – “размер” зоны стоимости, процент от общего объема сделок (`volume`)
 -
 описание:
-- получение свечей для заданных coin и timeframe
-- определяются флэты, для заданных параметров max_difference и min_length
-- для каждого найденного флэта определятся poc, val, vah
-- если флэты найдены, то отправляется сообщение с значениями poc, val, vah для всех найденных флэтов
+- получение свечей для заданных `coin` и `timeframe`
+- определяются флэты, для заданных параметров `max_difference` и `min_length`
+- для каждого найденного флэта определятся `poc`, `val`, `vah`
+- если флэты найдены, то отправляется сообщение с значениями `poc`, `val`, `vah` для всех найденных флэтов
 -
 дополнительно:
-- задание выполняется периодически с интервалом в 30 минут.
+- задание выполняется периодически с интервалом в `30` минут.
 -
 
 ### задание trend
@@ -61,13 +61,13 @@ list – просмотр заданий планировщика
 - `timeframe` – временной интервал
 -
 описание:
-- получение свечей для заданных coin и timeframe
-- определение направления тренда для [:-4]
+- получение свечей для заданных `coin` и `timeframe`
+- определение направления тренда для `[:-4]`
 - анализ значений цены закрытия последних трех свечей, если выполняется условие для определения смены тренда, то отправляется сообщение («downtrend to uptrend» или «uptrend to downtrend»)
 -
 дополнительно:
-- задание выполняется периодически с интервалом в 30 минут
-- для определения направления тренда использовал dmp и dmn из pandas_ta.adx.
+- задание выполняется периодически с интервалом в `30` минут
+- для определения направления тренда использовал `dmp` и `dmn` из `pandas_ta.adx`.
 
 ## ЗАПУСК
 1. клонировать репозиторий:
@@ -102,20 +102,20 @@ python rsi_bot/main.py
 
 ## ИСПОЛЬЗОВАНИЕ
 бот поддерживает команды:
-- `/add rsi <coin> <timeframe> <setpoint>` - добавить задание RSI
-- `/add volatility <coin> <timeframe> <setpoint>` - добавить задание ATR
-- `/add flats <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание POC
-- `/add trend <coin> <timeframe>` - добавить задание TREND
+- `/add rsi <coin> <timeframe> <setpoint>` - добавить задание `rsi`
+- `/add volatility <coin> <timeframe> <setpoint>` - добавить задание `volatility`
+- `/add flats <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание `flats`
+- `/add trend <coin> <timeframe>` - добавить задание `trend`
 
-- `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание RSI 
-- `/remove volatility <coin> <timeframe> <setpoint>` - удалить задание ATR
-- `/remove flats <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание POC
-- `/remove trend <coin> <timeframe>` - удалить задание TREND
+- `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание `rsi`
+- `/remove volatility <coin> <timeframe> <setpoint>` - удалить задание `volatility`
+- `/remove flats <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание `flats`
+- `/remove trend <coin> <timeframe>` - удалить задание `trend`
 
-- `/list rsi` - просмотр заданий RSI
-- `/list volatility` - просмотр заданий ATR
-- `/list flats` - просмотр заданий POC
-- `/list trend` - просмотр заданий TREND
+- `/list rsi` - просмотр заданий `rsi`
+- `/list volatility` - просмотр заданий `volatility`
+- `/list flats` - просмотр заданий `flats`
+- `/list trend` - просмотр заданий `trens`
 - `/list` - просмотр всех заданий
 
 
