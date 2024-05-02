@@ -24,29 +24,36 @@ TREND_INTERVAL = settings.BOT_TREND_JOB_INTERVAL
 
 class BotJobHelper:
 
-    prefix: str
-    interval: float
+    job_prefix: str
+    job_interval: float
 
     @classmethod
     def get_usage_message(cls) -> str:
         raise NotImplementedError()
 
     @classmethod
-    def get_prefix(cls) -> str:
-        return cls.prefix
+    def get_job_prefix(cls) -> str:
+        return cls.job_prefix
 
     @classmethod
-    def get_interval(cls) -> float:
-        return cls.interval
+    def get_job_interval(cls) -> float:
+        return cls.job_interval
 
     def __init__(self, user_id: int) -> None:
         self.__user_id = user_id
 
-    def get_name(self) -> str:
+    def get_job_params(self) -> list[str]:
         raise NotImplementedError()
 
+    def get_name(self) -> str:
+        prefix = type(self).get_job_prefix().lower()
+        params = '-'.join(self.get_job_params())
+        return f'{self.user_id}-{prefix}-{params}'
+
     def get_title(self) -> str:
-        raise NotImplementedError()
+        prefix = type(self).get_job_prefix().upper()
+        params = ', '.join(self.get_job_params())
+        return f'{prefix}[{params}]'
 
     async def execute(self) -> str | None:
         raise NotImplementedError()
@@ -66,8 +73,8 @@ class BotJobHelper:
 
 class RsiJob(BotJobHelper):
 
-    prefix = 'rsi'
-    interval = RSI_INTERVAL
+    job_prefix = 'rsi'
+    job_interval = RSI_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '240': (240, KLineInterval.minute),
@@ -78,7 +85,7 @@ class RsiJob(BotJobHelper):
         timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
-        return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
+        return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
                 f'coin: string\ntimeframe: {timeframes}\nsetpoint: float')
 
     def __init__(
@@ -95,20 +102,12 @@ class RsiJob(BotJobHelper):
         self.__timeframe = timeframe
         self.__setpoint = float(setpoint)
 
-    def get_name(self) -> str:
-        prefix = self.get_prefix().lower()
-        return (f'{self.user_id}-'
-                f'{prefix}-'
-                f'{self.__coin}-'
-                f'{self.__timeframe}-'
-                f'{self.__setpoint}')
-
-    def get_title(self) -> str:
-        prefix = self.get_prefix().upper()
-        return (f'{prefix}'
-                f'[{self.__coin}, '
-                f'{self.__timeframe}, '
-                f'{self.__setpoint}]')
+    def get_job_params(self) -> list[str]:
+        return [
+            self.__coin,
+            self.__timeframe,
+            str(self.__setpoint),
+        ]
 
     async def execute(self) -> str | None:
         limit, interval = self.timeframes[self.__timeframe]
@@ -124,8 +123,8 @@ class RsiJob(BotJobHelper):
 
 class VolatilityJob(BotJobHelper):
 
-    prefix = 'volatility'
-    interval = VOLATILITY_INTERVAL
+    job_prefix = 'volatility'
+    job_interval = VOLATILITY_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '240': (240, KLineInterval.minute),
@@ -136,7 +135,7 @@ class VolatilityJob(BotJobHelper):
         timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
-        return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
+        return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
                 f'coint: string\ntimeframe: {timeframes}\nsetpoint: float')
 
     def __init__(
@@ -153,20 +152,12 @@ class VolatilityJob(BotJobHelper):
         self.__timeframe = timeframe
         self.__setpoint = float(setpoint)
 
-    def get_name(self) -> str:
-        prefix = self.get_prefix().lower()
-        return (f'{self.user_id}-'
-                f'{prefix}-'
-                f'{self.__coin}-'
-                f'{self.__timeframe}-'
-                f'{self.__setpoint}')
-
-    def get_title(self) -> str:
-        prefix = self.get_prefix().upper()
-        return (f'{prefix}['
-                f'{self.__coin}, '
-                f'{self.__timeframe},'
-                f'{self.__setpoint}]')
+    def get_job_params(self) -> list[str]:
+        return [
+            self.__coin,
+            self.__timeframe,
+            str(self.__setpoint),
+        ]
 
     async def execute(self) -> str | None:
         limit, interval = self.timeframes[self.__timeframe]
@@ -182,8 +173,8 @@ class VolatilityJob(BotJobHelper):
 
 class FlatsJob(BotJobHelper):
 
-    prefix = 'flats'
-    interval = FLATS_INTERVAL
+    job_prefix = 'flats'
+    job_interval = FLATS_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '60': (60, KLineInterval.minute),
@@ -196,7 +187,7 @@ class FlatsJob(BotJobHelper):
         timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
-        return (f'{cls.get_prefix()} <coin> <timeframe> <max_difference> '
+        return (f'{cls.get_job_prefix()} <coin> <timeframe> <max_difference> '
                 f'<min_length> <va>\ncoin: string\ntimeframes: {timeframes}\n'
                 f'max_difference: float\nmin_length: integer\nva: float')
 
@@ -218,24 +209,14 @@ class FlatsJob(BotJobHelper):
         self.__min_length = int(min_length)
         self.__va = float(va)
 
-    def get_name(self) -> str:
-        prefix = self.get_prefix().lower()
-        return (f'{self.user_id}-'
-                f'{prefix}-'
-                f'{self.__coin}-'
-                f'{self.__timeframe}-'
-                f'{self.__max_difference}-'
-                f'{self.__min_length}-'
-                f'{self.__va}')
-
-    def get_title(self) -> str:
-        prefix = self.get_prefix().upper()
-        return (f'{prefix}['
-                f'{self.__coin}, '
-                f'{self.__timeframe}, '
-                f'{self.__max_difference}, '
-                f'{self.__min_length}, '
-                f'{self.__va}]')
+    def get_job_params(self) -> list[str]:
+        return [
+            self.__coin,
+            self.__timeframe,
+            str(self.__max_difference),
+            str(self.__min_length),
+            str(self.__va),
+        ]
 
     async def execute(self) -> str | None:
         limit, interval = self.timeframes[self.__timeframe]
@@ -260,8 +241,8 @@ class FlatsJob(BotJobHelper):
 
 class TrendJob(BotJobHelper):
 
-    prefix = 'trend'
-    interval = TREND_INTERVAL
+    job_prefix = 'trend'
+    job_interval = TREND_INTERVAL
     timeframes: dict[str, tuple[int, KLineInterval]] = {
         '30': (30, KLineInterval.minute),
         '60': (60, KLineInterval.minute),
@@ -274,7 +255,7 @@ class TrendJob(BotJobHelper):
         timeframes = ' '.join(
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
-        return (f'{cls.get_prefix()} <coin> <timeframe> <setpoint>\n'
+        return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
                 f'coint: string\ntimeframe: {timeframes}\n')
 
     def __init__(self, user_id: int, coin: str, timeframe: str) -> None:
@@ -284,18 +265,11 @@ class TrendJob(BotJobHelper):
             raise ValueError(f'timeframe invalid value: {timeframe}')
         self.__timeframe = timeframe
 
-    def get_name(self) -> str:
-        prefix = self.get_prefix().lower()
-        return (f'{self.user_id}-'
-                f'{prefix}-'
-                f'{self.__coin}-'
-                f'{self.__timeframe}')
-
-    def get_title(self) -> str:
-        prefix = self.get_prefix().upper()
-        return (f'{prefix}['
-                f'{self.__coin}, '
-                f'{self.__timeframe}]')
+    def get_job_params(self) -> list[str]:
+        return [
+            self.__coin,
+            self.__timeframe,
+        ]
 
     async def execute(self) -> str | None:
         limit, interval = self.timeframes[self.__timeframe]
@@ -342,7 +316,7 @@ class BotJobsShell:
     @classmethod
     def get_helper_class(cls, prefix: str) -> Type[BotJobHelper]:
         for helper_class in cls.HELPERS:
-            if prefix.lower() == helper_class.get_prefix().lower():
+            if prefix.lower() == helper_class.get_job_prefix().lower():
                 return helper_class
         raise ValueError('prefix invalid value')
 
@@ -358,7 +332,7 @@ class BotJobsShell:
         try:
             helper_class = cls.get_helper_class(args.pop(0))
         except Exception as error:
-            prefixes = [helper.get_prefix() for helper in cls.HELPERS]
+            prefixes = [helper.get_job_prefix() for helper in cls.HELPERS]
             raise BotJobsShellError(
                 message=f'<job_type>\njob_type: {",".join(prefixes)}'
             ) from error
@@ -373,7 +347,7 @@ class BotJobsShell:
                 removed = cls.remove_jobs_by_name(queue, helper.name)
                 queue.run_repeating(
                     callback=callback,
-                    interval=helper_class.get_interval(),
+                    interval=helper_class.get_job_interval(),
                     name=helper.name,
                     chat_id=chat_id,
                     user_id=user_id,
@@ -393,7 +367,7 @@ class BotJobsShell:
         try:
             helper_class = cls.get_helper_class(args.pop(0))
         except Exception as error:
-            prefixes = [helper.get_prefix() for helper in cls.HELPERS]
+            prefixes = [helper.get_job_prefix() for helper in cls.HELPERS]
             raise BotJobsShellError(
                 message=f'<job_type>\njob_type: {",".join(prefixes)}'
             ) from error
@@ -424,9 +398,9 @@ class BotJobsShell:
                         isinstance(job.data, BotJobHelper))
                 ]
         except Exception as error:
-            prefixes = [helper.get_prefix() for helper in cls.HELPERS]
+            prefixes = [helper.get_job_prefix() for helper in cls.HELPERS]
             raise BotJobsShellError(
                 message=f'<job_type>\njob_type: {",".join(prefixes)}'
             ) from error
         else:
-            return '\n'.join([job.title for job in jobs])
+            return 'List jobs:\n' + '\n'.join([job.title for job in jobs])
