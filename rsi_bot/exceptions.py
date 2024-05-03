@@ -1,25 +1,21 @@
-from typing import (
-    Optional,
-)
-
-
 class BybitClientError(Exception):
     pass
 
 
 class BybitClientConnectionError(BybitClientError):
-    pass
+
+    MESSAGE = 'connection error'
+
+    def __str__(self) -> str:
+        return type(self).MESSAGE
 
 
 class BybitClientResponseError(BybitClientError):
 
-    def __init__(self, status_code: Optional[int]) -> None:
-        self.__status_code = status_code
+    MESSAGE = 'incorrect response format'
 
     def __str__(self) -> str:
-        if self.__status_code is None:
-            return 'invalid response'
-        return f'status code: {self.__status_code}'
+        return type(self).MESSAGE
 
 
 class BotJobsShellError(Exception):

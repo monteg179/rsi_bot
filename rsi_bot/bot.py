@@ -12,6 +12,7 @@ from telegram.ext import (
 from rsi_bot import settings
 from rsi_bot.exceptions import (
     BotJobsShellError,
+    BybitClientError,
 )
 from rsi_bot.jobs import (
     BotJobHelper,
@@ -26,12 +27,16 @@ TELEGRAM_TOKEN = settings.Enviroment().telegram_token
 async def jobs_callback(context: ContextTypes.DEFAULT_TYPE) -> None:
     job = context.job.data
     if isinstance(job, BotJobHelper):
-        message = await job.execute()
-        if message:
-            await context.bot.send_message(
-                chat_id=context.job.chat_id,
-                text=message
-            )
+        try:
+            message = await job.execute()
+        except BybitClientError as error:
+            message = f'Baybit API client error: {error}'
+        finally:
+            if message:
+                await context.bot.send_message(
+                    chat_id=context.job.chat_id,
+                    text=f'{job.title}\n{message}'
+                )
 
 
 async def add_command_handler(

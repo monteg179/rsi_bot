@@ -187,20 +187,30 @@ class BybitClient:
     async def get(
         self,
         endpoint: str,
-        params: dict[str, Any]
+        params: dict[str, Any],
+        countdown: int = 10,
+        sleep: float = 30.0
     ) -> dict[str, Any]:
-        try:
-            response = await self.client.get(
-                url=f'https://{self.host}/{endpoint}',
-                params=params
-            )
-        except Exception as error:
-            raise BybitClientConnectionError() from error
+        while countdown > 0:
+            try:
+                response = await self.client.get(
+                    url=f'https://{self.host}/{endpoint}',
+                    params=params
+                )
+                status_code = response.status_code
+                if not status_code == httpx.codes.OK:
+                    raise httpx.HTTPStatusError(
+                        message=f'status_code: {status_code}',
+                        request=response.request,
+                        response=response
+                    )
+            except Exception:
+                countdown -= 1
+                await asyncio.sleep(sleep)
+            else:
+                return response.json()
         else:
-            status_code = response.status_code
-            if not status_code == httpx.codes.OK:
-                raise BybitClientResponseError(status_code)
-            return response.json()
+            raise BybitClientConnectionError()
 
     async def get_candles(
         self,
@@ -225,13 +235,13 @@ class BybitClient:
                 raise BybitClientResponseError()
             candles = [
                 {
-                    self.START_TIME_COLUMN: float(candle[0]) / 1000.0,
-                    self.OPEN_PRICE_COLUMN: float(candle[1]),
-                    self.HIGH_PRICE_COLUMN: float(candle[2]),
-                    self.LOW_PRICE_COLUMN: float(candle[3]),
-                    self.CLOSE_PRICE_COLUMN: float(candle[4]),
-                    self.VOLUME_COLUMN: float(candle[5]),
-                    self.TURNOVER_COLUMN: float(candle[6]),
+                    type(self).START_TIME_COLUMN: float(candle[0]) / 1000.0,
+                    type(self).OPEN_PRICE_COLUMN: float(candle[1]),
+                    type(self).HIGH_PRICE_COLUMN: float(candle[2]),
+                    type(self).LOW_PRICE_COLUMN: float(candle[3]),
+                    type(self).CLOSE_PRICE_COLUMN: float(candle[4]),
+                    type(self).VOLUME_COLUMN: float(candle[5]),
+                    type(self).TURNOVER_COLUMN: float(candle[6]),
                 }
                 for candle in reversed(json_candles)
             ]

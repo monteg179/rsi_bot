@@ -86,7 +86,9 @@ class RsiJob(BotJobHelper):
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
-                f'coin: string\ntimeframe: {timeframes}\nsetpoint: float')
+                f'coin: string\n'
+                f'timeframe: {timeframes}\n'
+                f'setpoint: float')
 
     def __init__(
         self,
@@ -118,7 +120,7 @@ class RsiJob(BotJobHelper):
         )
         value = BybitClient.rsi(data)
         if value < self.__setpoint * 0.15 or value > self.__setpoint * 0.85:
-            return f'{self.get_title()}:\n{value:.2f}'
+            return f'{value:.2f}'
 
 
 class VolatilityJob(BotJobHelper):
@@ -136,7 +138,9 @@ class VolatilityJob(BotJobHelper):
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
-                f'coint: string\ntimeframe: {timeframes}\nsetpoint: float')
+                f'coint: string\n'
+                f'timeframe: {timeframes}\n'
+                f'setpoint: float')
 
     def __init__(
         self,
@@ -168,7 +172,7 @@ class VolatilityJob(BotJobHelper):
         )
         value = BybitClient.volatility(data)
         if value < self.__setpoint * 0.15 or value > self.__setpoint * 0.85:
-            return f'{self.get_title()}:\n{value:.2f}'
+            return f'{value:.2f}'
 
 
 class FlatsJob(BotJobHelper):
@@ -188,8 +192,12 @@ class FlatsJob(BotJobHelper):
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_job_prefix()} <coin> <timeframe> <max_difference> '
-                f'<min_length> <va>\ncoin: string\ntimeframes: {timeframes}\n'
-                f'max_difference: float\nmin_length: integer\nva: float')
+                f'<min_length> <va>\n'
+                f'coin: string\n'
+                f'timeframes: {timeframes}\n'
+                f'max_difference: float\n'
+                f'min_length: integer\n'
+                f'va: float')
 
     def __init__(
         self,
@@ -236,7 +244,7 @@ class FlatsJob(BotJobHelper):
                 f'val={flat["val"]:.2f}, poc={flat["poc"]}, vah={flat["vah"]}'
                 for flat in flats
             ]
-            return f'{self.title}:\n' + '\n'.join(result)
+            return '\n'.join(result)
 
 
 class TrendJob(BotJobHelper):
@@ -256,7 +264,8 @@ class TrendJob(BotJobHelper):
             str(timeframe) for timeframe in cls.timeframes.keys()
         )
         return (f'{cls.get_job_prefix()} <coin> <timeframe> <setpoint>\n'
-                f'coint: string\ntimeframe: {timeframes}\n')
+                f'coint: string\n'
+                f'timeframe: {timeframes}\n')
 
     def __init__(self, user_id: int, coin: str, timeframe: str) -> None:
         super().__init__(user_id)
@@ -280,9 +289,9 @@ class TrendJob(BotJobHelper):
         )
         result = BybitClient.trend(data)
         if result > 0:
-            return f'{self.get_title()}:\ndowntrend to uptrend'
+            return 'downtrend to uptrend'
         if result < 0:
-            return f'{self.get_title()}:\nuptrend to downtrend'
+            return 'uptrend to downtrend'
 
 
 class BotJobsShell:
