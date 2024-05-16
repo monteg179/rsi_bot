@@ -126,3 +126,12 @@ python rsi_bot/main.py
 
 ## АВТОРЫ
 * Сергей Кузнецов - monteg179@yandex.ru
+
+
+
+sudo docker image build -t monteg179/rsi_bot .
+sudo docker container create --name rsi_bot --env-file /root/rsi_bot/.env  --restart always monteg179/rsi_bot
+sudo docker container start rsi_bot
+
+
+docker run -it --rm --env-file .env monteg179/rsi_bot /bin/bash

@@ -172,8 +172,8 @@ class BybitClient:
             cls.__instance = super().__new__(cls)
         return cls.__instance
 
-    def __init__(self, debug: bool = DEBUG) -> None:
-        self.host = type(self).TEST_HOST if debug else type(self).HOST
+    def __init__(self) -> None:
+        self.host = type(self).TEST_HOST if DEBUG else type(self).HOST
         self.client = httpx.AsyncClient(
             transport=RateLimitTransport(
                 max_per_second=MAX_PER_SECOND,

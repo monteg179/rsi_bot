@@ -16,7 +16,8 @@ from rsi_bot.exceptions import (
 )
 from rsi_bot import settings
 
-RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
+# RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
+RSI_INTERVAL = 30.0
 VOLATILITY_INTERVAL = settings.BOT_VOLATILITY_JOB_INTERVAL
 FLATS_INTERVAL = settings.BOT_FLATS_JOB_INTERVAL
 TREND_INTERVAL = settings.BOT_TREND_JOB_INTERVAL
@@ -309,9 +310,9 @@ class BotJobsShell:
         if jobs:
             for job in jobs:
                 job.schedule_removal()
-            return '\n'.join(
+            return 'Remove job:\n' + '\n'.join(
                 [
-                    f'Remove {job.data.title} job'
+                    job.data.title
                     for job in jobs
                     if isinstance(job.data, BotJobHelper)
                 ]
@@ -363,8 +364,8 @@ class BotJobsShell:
                     data=helper
                 )
                 if removed:
-                    return f'{removed}\nAdd {helper.title} job'
-                return f'Add {helper.title} job'
+                    return f'{removed}\nAdd job:\n{helper.title}'
+                return f'Add job:\n{helper.title}'
 
     @classmethod
     def remove_job(
@@ -412,4 +413,4 @@ class BotJobsShell:
                 message=f'<job_type>\njob_type: {",".join(prefixes)}'
             ) from error
         else:
-            return 'List jobs:\n' + '\n'.join([job.title for job in jobs])
+            return 'Jobs list:\n' + '\n'.join([job.title for job in jobs])

@@ -21,7 +21,14 @@ from rsi_bot.jobs import (
 
 logger = logging.getLogger(__name__)
 
-TELEGRAM_TOKEN = settings.Enviroment().telegram_token
+env = settings.Enviroment.get_instance()
+TELEGRAM_TOKEN = env.telegram_token
+WEBHOOK_PORT = env.webhook_port
+WEBHOOK_URL = env.webhook_url
+WEBHOOK_SECRET = env.webhook_secret
+WEBHOOK_PATH = env.webhook_path
+WEBHOOK_CERT = env.webhook_cert
+WEBHOOK_KEY = env.webhook_key
 
 
 async def jobs_callback(context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -35,7 +42,7 @@ async def jobs_callback(context: ContextTypes.DEFAULT_TYPE) -> None:
             if message:
                 await context.bot.send_message(
                     chat_id=context.job.chat_id,
-                    text=f'{job.title}\n{message}'
+                    text=message
                 )
 
 
@@ -61,7 +68,7 @@ async def add_command_handler(
     else:
         await context.bot.send_message(
             chat_id=chat_id,
-            text=message
+            text=message or 'empty'
         )
 
 
@@ -141,4 +148,15 @@ def build_bot_application() -> Application:
 
 
 def run_bot_application(app: Application) -> None:
-    app.run_polling(allowed_updates=Update.ALL_TYPES)
+    if all([WEBHOOK_PORT, WEBHOOK_URL, WEBHOOK_CERT]):
+        app.run_webhook(
+            listen='0.0.0.0',
+            port=WEBHOOK_PORT,
+            secret_token=WEBHOOK_SECRET,
+            url_path=WEBHOOK_PATH,
+            webhook_url=WEBHOOK_URL,
+            cert=WEBHOOK_CERT,
+            key=WEBHOOK_KEY
+        )
+    else:
+        app.run_polling(allowed_updates=Update.ALL_TYPES)

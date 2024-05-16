@@ -1,3 +1,5 @@
+import logging
+import os
 from typing import (
     Self,
 )
@@ -5,9 +7,6 @@ from typing import (
 from dotenv import (
     load_dotenv,
 )
-import logging
-import os
-
 
 LOG_LEVEL = logging.INFO
 
@@ -24,10 +23,22 @@ class Enviroment:
 
     DEBUG = 'DEBUG'
     TELEGRAM_TOKEN = 'TELEGRAM_TOKEN'
+    WEBHOOK_PORT = 'WEBHOOK_PORT'
+    WEBHOOK_URL = 'WEBHOOK_URL'
+    WEBHOOK_SECRET = 'WEBHOOK_SECRET'
+    WEBHOOK_PATH = 'WEBHOOK_PATH'
+    WEBHOOK_CERT = 'WEBHOOK_CERT'
+    WEBHOOK_KEY = 'WEBHOOK_KEY'
     BYBIT_API_KEY = 'BYBIT_API_KEY'
     BYBIT_API_SECRET = 'BYBIT_API_SECRET'
 
     __instance: Self = None
+
+    @classmethod
+    def get_instance(cls) -> Self:
+        if cls.__instance is None:
+            cls.__instance = cls()
+        return cls.__instance
 
     def __new__(cls) -> Self:
         if cls.__instance is None:
@@ -37,15 +48,15 @@ class Enviroment:
     def __init__(self) -> None:
         load_dotenv()
         self.__debug = os.getenv(type(self).DEBUG, 'false').lower() == 'true'
-        self.__telegram_token = os.getenv(
-            key=type(self).TELEGRAM_TOKEN
-        )
-        self.__bybit_api_key = os.getenv(
-            key=type(self).BYBIT_API_KEY
-        )
-        self.__bybit_api_secret = os.getenv(
-            key=type(self).BYBIT_API_KEY
-        )
+        self.__telegram_token = os.getenv(type(self).TELEGRAM_TOKEN)
+        self.__webhook_port = int(os.getenv(type(self).WEBHOOK_PORT))
+        self.__webhook_url = os.getenv(type(self).WEBHOOK_URL)
+        self.__webhook_secret = os.getenv(type(self).WEBHOOK_SECRET)
+        self.__webhook_path = os.getenv(type(self).WEBHOOK_PATH, '')
+        self.__webhook_cert = os.getenv(type(self).WEBHOOK_CERT)
+        self.__webhook_key = os.getenv(type(self).WEBHOOK_KEY)
+        self.__bybit_api_key = os.getenv(type(self).BYBIT_API_KEY)
+        self.__bybit_api_secret = os.getenv(type(self).BYBIT_API_SECRET)
 
     @property
     def debug(self) -> bool:
@@ -56,9 +67,33 @@ class Enviroment:
         return self.__telegram_token
 
     @property
-    def bybit_api_key(self) -> str:
+    def webhook_url(self) -> str | None:
+        return self.__webhook_url
+
+    @property
+    def webhook_port(self) -> int | None:
+        return self.__webhook_port
+
+    @property
+    def webhook_secret(self) -> str | None:
+        return self.__webhook_secret
+
+    @property
+    def webhook_path(self) -> str | None:
+        return self.__webhook_path
+
+    @property
+    def webhook_cert(self) -> str | None:
+        return self.__webhook_cert
+
+    @property
+    def webhook_key(self) -> str | None:
+        return self.__webhook_key
+
+    @property
+    def bybit_api_key(self) -> str | None:
         return self.__bybit_api_key
 
     @property
-    def bybit_api_secret(self) -> str:
+    def bybit_api_secret(self) -> str | None:
         return self.__bybit_api_secret
