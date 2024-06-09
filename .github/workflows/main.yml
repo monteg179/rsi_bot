@@ -69,7 +69,7 @@ jobs:
         password: ${{secrets.VDS_PASSWORD}}
         script: |
           cd /deploy/rsibot
-          sudo docker compose down --rmi local
+          sudo docker compose down --rmi all
           cp -rf upload/. .
           echo "TELEGRAM_TOKEN=${{secrets.TELEGRAM_TOKEN}}" > .env
           echo "WEBHOOK_URL=${{secrets.TELEGRAM_WEBHOOK_URL}}" >> .env
