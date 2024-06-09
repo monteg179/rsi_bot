@@ -75,43 +75,27 @@ list – просмотр заданий планировщика
 git clone -b 'develop' https://github.com/monteg179/rsi_bot.git
 cd rsi_bot
 ```
-2. создать файл .env с таким содержанием
+2. создать файл `.env` с таким содержанием
 ```
 TELEGRAM_TOKEN=<token>
 ```
-3. создать и активировать виртуальное окружение
+3. создать, активировать виртуальное окружение, и запустить бота
 ```sh
 poetry install
 poetry shell
-```
-или так
-```sh
-python -m venv venv
-source venv/bin/activate
-pip install --upgrade pip
-pip install -r requirements.txt
-```
-4. запутить бота
-```sh
 poetry run bot
-```
-или так 
-```sh
-python rsi_bot/main.py
 ```
 
 ## ИСПОЛЬЗОВАНИЕ
 бот поддерживает команды:
-- `/add rsi <coin> <timeframe> <setpoint>` - добавить задание `rsi`
-- `/add volatility <coin> <timeframe> <setpoint>` - добавить задание `volatility`
-- `/add flats <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание `flats`
-- `/add trend <coin> <timeframe>` - добавить задание `trend`
-
-- `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание `rsi`
-- `/remove volatility <coin> <timeframe> <setpoint>` - удалить задание `volatility`
-- `/remove flats <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание `flats`
-- `/remove trend <coin> <timeframe>` - удалить задание `trend`
-
+- `/add rsi <coin> <timeframe> <setpoint>` - добавить задание `rsi`<br>Например: `/add rsi BTCUSD 30 0.0`
+- `/add volatility <coin> <timeframe> <setpoint>` - добавить задание `volatility`<br>Например: `/add volatility BTCUSD 30 0.0`
+- `/add flats <coin> <timeframe> <max_difference> <min_length> <va>` - добавить задание `flats`<br>Например: `/add flats BTCUSD 30 1.0 10 68.0`
+- `/add trend <coin> <timeframe>` - добавить задание `trend`<br>Например: `/add trend BTCUSD 1440`
+- `/remove rsi <coin> <timeframe> <setpoint>` - удалить задание `rsi`<br>Например: `/remove rsi BTCUSD 30 0.0`
+- `/remove volatility <coin> <timeframe> <setpoint>` - удалить задание `volatility`<br>Например: `/remove volatility BTCUSD 30 0.0`
+- `/remove flats <coin> <timeframe> <max_difference> <min_length> <va>` - удалить задание `flats`<br>Например: `/remove flats BTCUSD 30 1.0 10 68.0`
+- `/remove trend <coin> <timeframe>` - удалить задание `trend`<br>Например: `/remove trend BTCUSD 1440`
 - `/list rsi` - просмотр заданий `rsi`
 - `/list volatility` - просмотр заданий `volatility`
 - `/list flats` - просмотр заданий `flats`
@@ -121,8 +105,12 @@ python rsi_bot/main.py
 
 ## ТЕХНОЛОГИИ
 - Python 3.11
+- Poetry
+- Pyenv
 - Python-Telegram-Bot
 - Pandas-TA
+- Docker
+- Github Actions
 
 ## АВТОРЫ
 * Сергей Кузнецов - monteg179@yandex.ru

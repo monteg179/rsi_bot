@@ -49,7 +49,7 @@ class Enviroment:
         load_dotenv()
         self.__debug = os.getenv(type(self).DEBUG, 'false').lower() == 'true'
         self.__telegram_token = os.getenv(type(self).TELEGRAM_TOKEN)
-        self.__webhook_port = int(os.getenv(type(self).WEBHOOK_PORT))
+        self.__webhook_port = int(os.getenv(type(self).WEBHOOK_PORT, 0))
         self.__webhook_url = os.getenv(type(self).WEBHOOK_URL)
         self.__webhook_secret = os.getenv(type(self).WEBHOOK_SECRET)
         self.__webhook_path = os.getenv(type(self).WEBHOOK_PATH, '')
