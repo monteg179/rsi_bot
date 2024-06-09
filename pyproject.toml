@@ -13,7 +13,7 @@ python-dotenv = "^1.0.1"
 pandas-ta = "^0.3.14b0"
 
 [tool.poetry.scripts]
-bot = "rsi_bot.main:main"
+bot = "backend.main:main"
 
 
 [build-system]

@@ -7,17 +7,16 @@ from telegram.ext import (
     JobQueue,
 )
 
-from rsi_bot.bybit import (
+from backend.bybit import (
     BybitClient,
     KLineInterval,
 )
-from rsi_bot.exceptions import (
+from backend.exceptions import (
     BotJobsShellError,
 )
-from rsi_bot import settings
+from backend import settings
 
-# RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
-RSI_INTERVAL = 30.0
+RSI_INTERVAL = settings.BOT_RSI_JOB_INTERVAL
 VOLATILITY_INTERVAL = settings.BOT_VOLATILITY_JOB_INTERVAL
 FLATS_INTERVAL = settings.BOT_FLATS_JOB_INTERVAL
 TREND_INTERVAL = settings.BOT_TREND_JOB_INTERVAL

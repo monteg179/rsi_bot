@@ -9,12 +9,12 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from rsi_bot import settings
-from rsi_bot.exceptions import (
+from backend import settings
+from backend.exceptions import (
     BotJobsShellError,
     BybitClientError,
 )
-from rsi_bot.jobs import (
+from backend.jobs import (
     BotJobHelper,
     BotJobsShell,
 )

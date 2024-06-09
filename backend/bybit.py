@@ -10,13 +10,13 @@ from pandas import (
     DataFrame,
 )
 
-from rsi_bot.exceptions import (
+from backend.exceptions import (
     BybitClientConnectionError,
     BybitClientError,
     BybitClientResponseError,
 )
-from rsi_bot import settings
-from rsi_bot import ta
+from backend import settings
+from backend import ta
 
 DEBUG = settings.Enviroment().debug
 MAX_PER_SECOND = settings.CLIENT_MAX_PER_SECOND

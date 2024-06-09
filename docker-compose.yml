@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  backend:
+    build: ./backend/
+    image: rsi_bot_backend:latest
+    env_file: .env
+    volumes:
+      - /etc/nginx/ssl:/ssl:ro
+  gateway:
+    build: ./gateway/
+    image: rsi_bot_gateway:latest
+    # depends_on:
+    #   - backend
+    ports:
+      - 5001:5001
