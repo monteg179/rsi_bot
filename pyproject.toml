@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "rsi-bot"
+version = "0.1.0"
+description = ""
+authors = ["Kuznetsov Sergey <monteg179@yandex.ru>"]
+readme = "README.md"
+packages = [{include = "backend"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+python-dotenv = "^1.0.1"
+pandas-ta = "^0.3.14b0"
+python-telegram-bot = {extras = ["job-queue", "webhooks"], version = "^21.3"}
+
+[tool.poetry.scripts]
+bot = "backend.main:main"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

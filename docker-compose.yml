@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  backend:
+    build: ./backend/
+    image: monteg179/rsi_bot_backend:latest
+    env_file: .env
+    volumes:
+      - /etc/nginx/ssl:/ssl:ro
+  gateway:
+    build: ./gateway/
+    image: monteg179/rsi_bot_gateway:latest
+    ports:
+      - 5001:5001
