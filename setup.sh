@@ -42,7 +42,7 @@ docker_compose_up() {
 
 docker_compose_down() {
     echo -n "Docker compose down ..."
-    docker compose -f $COMPOSE down --rmi local 1> $OUT 2>$ERR
+    docker compose -f $COMPOSE down --rmi all 1> $OUT 2>$ERR
     error=$?
     if [ $error -eq 0 ]; then
 	    echo " completed"
@@ -54,7 +54,7 @@ docker_compose_down() {
 
 docker_compose_remove() {
     echo -n "Docker compose remove ..."
-    docker compose -f $COMPOSE down --rmi local -v 1> $OUT 2>$ERR
+    docker compose -f $COMPOSE down --rmi all -v 1> $OUT 2>$ERR
     error=$?
     if [ $error -eq 0 ]; then
 	    echo " completed"
