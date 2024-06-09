@@ -162,5 +162,3 @@ cython_debug/
 .other
 setup.err
 setup.out
-
-.github
